@@ -44,10 +44,12 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	/**
 	 * Create a new ProxyFactory.
 	 * <p>Will proxy all interfaces that the given target implements.
-	 * @param target the target object to be proxied
+	 * @param target the target object to be proxied 被代理对象
 	 */
 	public ProxyFactory(Object target) {
+		//将目标对象 封装成 SingletonTargetSource 保存到 父类的成员变量中
 		setTarget(target);
+ 		//获取目标对象的所有接口 保存到 父类成员变量中
 		setInterfaces(ClassUtils.getAllInterfaces(target));
 	}
 
@@ -107,6 +109,7 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * @return the proxy object
 	 */
 	public Object getProxy(@Nullable ClassLoader classLoader) {
+		//主要分析 JdkDynamicAopProxy 假设createAopProxy返回的 就是JdkDynamicAopProxy
 		return createAopProxy().getProxy(classLoader);
 	}
 

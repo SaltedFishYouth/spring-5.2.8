@@ -47,8 +47,11 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 	 * Create a new DefaultAdvisorAdapterRegistry, registering well-known adapters.
 	 */
 	public DefaultAdvisorAdapterRegistry() {
+		//方法之前
 		registerAdvisorAdapter(new MethodBeforeAdviceAdapter());
+		//返回之后
 		registerAdvisorAdapter(new AfterReturningAdviceAdapter());
+		//异常
 		registerAdvisorAdapter(new ThrowsAdviceAdapter());
 	}
 
@@ -78,12 +81,17 @@ public class DefaultAdvisorAdapterRegistry implements AdvisorAdapterRegistry, Se
 	@Override
 	public MethodInterceptor[] getInterceptors(Advisor advisor) throws UnknownAdviceTypeException {
 		List<MethodInterceptor> interceptors = new ArrayList<>(3);
+		//获取 advisor 中包装的 advice
 		Advice advice = advisor.getAdvice();
+
+		//当前增强是否是 方法拦截器
 		if (advice instanceof MethodInterceptor) {
 			interceptors.add((MethodInterceptor) advice);
 		}
 		for (AdvisorAdapter adapter : this.adapters) {
+			//是否继承 上面给出的 3个接口
 			if (adapter.supportsAdvice(advice)) {
+				//三个接口没实现 MethodInterceptor 所以 包装下 放里面
 				interceptors.add(adapter.getInterceptor(advisor));
 			}
 		}

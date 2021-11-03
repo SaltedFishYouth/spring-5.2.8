@@ -35,12 +35,16 @@ public interface Pointcut {
 	/**
 	 * Return the ClassFilter for this pointcut.
 	 * @return the ClassFilter (never {@code null})
+	 *
+	 * 类过滤器 判断 某个类 是否复合切点位置
 	 */
 	ClassFilter getClassFilter();
 
 	/**
 	 * Return the MethodMatcher for this pointcut.
 	 * @return the MethodMatcher (never {@code null})
+	 *
+	 * 方法匹配器 判断 类中某个方法 是否匹配条件，匹配的方法才会增强
 	 */
 	MethodMatcher getMethodMatcher();
 

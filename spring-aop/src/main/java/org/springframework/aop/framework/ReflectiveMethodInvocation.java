@@ -94,12 +94,12 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 
 	/**
 	 * Construct a new ReflectiveMethodInvocation with the given arguments.
-	 * @param proxy the proxy object that the invocation was made on
-	 * @param target the target object to invoke
-	 * @param method the method to invoke
-	 * @param arguments the arguments to invoke the method with
-	 * @param targetClass the target class, for MethodMatcher invocations
-	 * @param interceptorsAndDynamicMethodMatchers interceptors that should be applied,
+	 * @param proxy the proxy object that the invocation was made on  		代理对象
+	 * @param target the target object to invoke							目标对象
+	 * @param method the method to invoke									目标对象方法
+	 * @param arguments the arguments to invoke the method with				目标对象方法参数
+	 * @param targetClass the target class, for MethodMatcher invocations	目标对象类型
+	 * @param interceptorsAndDynamicMethodMatchers interceptors that should be applied,	方法拦截器 list
 	 * along with any InterceptorAndDynamicMethodMatchers that need evaluation at runtime.
 	 * MethodMatchers included in this struct must already have been found to have matched
 	 * as far as was possibly statically. Passing an array might be about 10% faster,
@@ -159,12 +159,18 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	@Nullable
 	public Object proceed() throws Throwable {
 		// We start with an index of -1 and increment early.
+
+		//说明 所有的方法拦截器都已经调用了
 		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+			//执行目标对象的方法
 			return invokeJoinpoint();
 		}
 
+		//获取方法拦截器
 		Object interceptorOrInterceptionAdvice =
 				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+
+		//是否 需要 运行时的拦截器 需要参数匹配
 		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
 			// Evaluate dynamic method matcher here: static part will already have
 			// been evaluated and found to match.
@@ -183,6 +189,8 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 		else {
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
+
+			//调用增强的逻辑 返回的还是 当前类递归 直到增强 都做完了 才会调用 目标方法
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
 		}
 	}

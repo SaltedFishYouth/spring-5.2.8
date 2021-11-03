@@ -386,6 +386,7 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 
 	@Override
 	public void addAdvice(Advice advice) throws AopConfigException {
+		//获取当前 已持有的“通知个数”
 		int pos = this.advisors.size();
 		addAdvice(pos, advice);
 	}
@@ -396,16 +397,19 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	@Override
 	public void addAdvice(int pos, Advice advice) throws AopConfigException {
 		Assert.notNull(advice, "Advice must not be null");
+		//先不考虑，引介增强 很少用
 		if (advice instanceof IntroductionInfo) {
 			// We don't need an IntroductionAdvisor for this kind of introduction:
 			// It's fully self-describing.
 			addAdvisor(pos, new DefaultIntroductionAdvisor(advice, (IntroductionInfo) advice));
 		}
+		//先不考虑，引介增强 很少用
 		else if (advice instanceof DynamicIntroductionAdvice) {
 			// We need an IntroductionAdvisor for this kind of introduction.
 			throw new AopConfigException("DynamicIntroductionAdvice may only be added as part of IntroductionAdvisor");
 		}
 		else {
+			//spring 中 advice(aop联盟) 对应的接口是 advisor， advisor包装着 advice实例
 			addAdvisor(pos, new DefaultPointcutAdvisor(advice));
 		}
 	}

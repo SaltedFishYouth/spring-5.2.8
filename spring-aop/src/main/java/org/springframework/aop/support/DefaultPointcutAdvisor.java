@@ -38,6 +38,8 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor implements Serializable {
 
+	//表示切点 信息
+	//表示 匹配 所有class和所有方法
 	private Pointcut pointcut = Pointcut.TRUE;
 
 

@@ -111,16 +111,23 @@ public abstract class AopProxyUtils {
 	 * @param decoratingProxy whether to expose the {@link DecoratingProxy} interface
 	 * @return the complete set of interfaces to proxy
 	 * @since 4.3
+	 *
+	 * 这里 做的 最主要 就是 判断 目标对象 接口是否实现了 spring 的这 三个接口 没有的话 添加进去
+	 *
 	 * @see SpringProxy
 	 * @see Advised
 	 * @see DecoratingProxy
 	 */
 	static Class<?>[] completeProxiedInterfaces(AdvisedSupport advised, boolean decoratingProxy) {
+		//从ProxyFactory 中 拿到 所有 target 提取出来的接口
 		Class<?>[] specifiedInterfaces = advised.getProxiedInterfaces();
+		//提出来的接口为空
 		if (specifiedInterfaces.length == 0) {
 			// No user-specified interfaces: check whether target class is an interface.
+			//提取目标类
 			Class<?> targetClass = advised.getTargetClass();
 			if (targetClass != null) {
+				//吐过目标类是 接口 添加进去
 				if (targetClass.isInterface()) {
 					advised.setInterfaces(targetClass);
 				}
@@ -130,9 +137,13 @@ public abstract class AopProxyUtils {
 				specifiedInterfaces = advised.getProxiedInterfaces();
 			}
 		}
+		//判断目标对象 是否已经有 SpringProxy杰阔，如果没有 SpringProxy 这个接口修添加，用于标识 这个代理是 为spring 创建的
 		boolean addSpringProxy = !advised.isInterfaceProxied(SpringProxy.class);
+		//下面两逻辑一样 是否有 advised、decoratingProxy 接口 没有的话就添加
 		boolean addAdvised = !advised.isOpaque() && !advised.isInterfaceProxied(Advised.class);
 		boolean addDecoratingProxy = (decoratingProxy && !advised.isInterfaceProxied(DecoratingProxy.class));
+
+		//非用户 自己定义的接口 都spring 自己的
 		int nonUserIfcCount = 0;
 		if (addSpringProxy) {
 			nonUserIfcCount++;
@@ -143,9 +154,13 @@ public abstract class AopProxyUtils {
 		if (addDecoratingProxy) {
 			nonUserIfcCount++;
 		}
+		//创建一个新的 class数组 用于 存放 目标 对象的接口 与 spring 追加的接口
 		Class<?>[] proxiedInterfaces = new Class<?>[specifiedInterfaces.length + nonUserIfcCount];
+		//将 目标对象接口 拷贝到  新建 数组 proxiedInterfaces 内
 		System.arraycopy(specifiedInterfaces, 0, proxiedInterfaces, 0, specifiedInterfaces.length);
 		int index = specifiedInterfaces.length;
+
+		//根据上面判断逻辑 将sping 的那3个数组 添加 进新数组
 		if (addSpringProxy) {
 			proxiedInterfaces[index] = SpringProxy.class;
 			index++;

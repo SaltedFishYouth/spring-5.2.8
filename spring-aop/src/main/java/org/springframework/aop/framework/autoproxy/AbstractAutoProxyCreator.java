@@ -133,10 +133,19 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	private final Set<String> targetSourcedBeans = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
+	/**
+	 * 防止重复将某个 bean 创建代理对象
+	 * 1.正常情况
+	 * 2.bean 与 bean 形成依赖 也会提前创建代理对象
+	 */
 	private final Map<Object, Object> earlyProxyReferences = new ConcurrentHashMap<>(16);
 
 	private final Map<Object, Class<?>> proxyTypes = new ConcurrentHashMap<>(16);
 
+	/**
+	 * key：beanName
+	 * value:boolean true:已经被增强过了  false | null ：zhge beanName 对应的实例 还未增强
+	 */
 	private final Map<Object, Boolean> advisedBeans = new ConcurrentHashMap<>(256);
 
 
@@ -240,6 +249,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
+	/**
+	 * 实例化之前
+	 * @param beanClass the class of the bean to be instantiated
+	 * @param beanName the name of the bean
+	 * @return
+	 */
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
 		Object cacheKey = getCacheKey(beanClass, beanName);
@@ -289,13 +304,21 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	/**
 	 * Create a proxy with the configured interceptors if the bean is
 	 * identified as one to proxy by the subclass.
+	 *
+	 * 对象已经创建出来了 并且 已经注入完了 之后
+	 * (AOP 就是这时候)
+	 * @param bean spring容器完全初始化完毕的实例对象
+	 * @param beanName
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
 	@Override
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		if (bean != null) {
+			//cacheKey 大部分情况下是 beanName
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
+			//A依赖B B依赖A  在创建完B 之后，接着走A 逻辑到这 会remove 并且 相等 拿到A 增强前的 beanA
 			if (this.earlyProxyReferences.remove(cacheKey) != bean) {
+				//增强逻辑
 				return wrapIfNecessary(bean, beanName, cacheKey);
 			}
 		}
@@ -326,33 +349,49 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	/**
 	 * Wrap the given bean if necessary, i.e. if it is eligible for being proxied.
+	 *
+	 * 增强逻辑
+	 *
 	 * @param bean the raw bean instance
 	 * @param beanName the name of the bean
 	 * @param cacheKey the cache key for metadata access
 	 * @return a proxy wrapping the bean, or the raw bean instance as-is
 	 */
 	protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
+		//条件一般不成立  因为很少使用 TargetSourceCreator 去创建对象。 BeforeInstantiation阶段
 		if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
 			return bean;
 		}
+
+		//等于false 不需要增强处理 是在BeforeInstantiation 阶段 判断 放进去的
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
+
+		//isInfrastructureClass(bean.getClass()) : 当前bean 类型是否是基础框架类型  不能被增强
+		//shouldSkip(bean.getClass(), beanName)  : .beanName ORIGINAL结尾则跳过 增强逻辑
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
 		}
 
 		// Create proxy if we have advice.
+		// 查找适合当前 bean 实例Class 的通知
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
+
+		//获取的 增强 通知 是否为 空
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
+			//根据查询到的通知 创建代理对象
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
+			//保存 代理对象类型
 			this.proxyTypes.put(cacheKey, proxy.getClass());
+			//返回代理对象
 			return proxy;
 		}
 
+		//说明 当前 bean 不需要被增强
 		this.advisedBeans.put(cacheKey, Boolean.FALSE);
 		return bean;
 	}

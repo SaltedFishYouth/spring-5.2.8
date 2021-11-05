@@ -38,9 +38,16 @@ import org.springframework.lang.Nullable;
  */
 class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 
+	/**
+	 *
+	 * @param element 包装 <aop:aspectj-autoproxy  /> 标签数据
+	 * @param parserContext 它持有一个 readerContext  readerContext 里持有 registry ，也就是 beanFactory
+	 * @return
+	 */
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		//
 		AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
 		extendBeanDefinition(element, parserContext);
 		return null;

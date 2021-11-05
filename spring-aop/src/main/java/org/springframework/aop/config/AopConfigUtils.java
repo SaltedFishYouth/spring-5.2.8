@@ -93,10 +93,18 @@ public abstract class AopConfigUtils {
 		return registerAspectJAnnotationAutoProxyCreatorIfNecessary(registry, null);
 	}
 
+	/**
+	 * 把 aspectj-autoproxy 解析成一个 beanDefinition 并且 注册到 Spring 容器中
+	 * @param registry
+	 * @param source
+	 * @return
+	 */
 	@Nullable
 	public static BeanDefinition registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
-
+		//AnnotationAwareAspectJAutoProxyCreator : aop 全靠这个class
+		//registry spring 容器
+		//source element
 		return registerOrEscalateApcAsRequired(AnnotationAwareAspectJAutoProxyCreator.class, registry, source);
 	}
 
@@ -114,13 +122,22 @@ public abstract class AopConfigUtils {
 		}
 	}
 
+	/**
+	 *
+	 * @param cls AnnotationAwareAspectJAutoProxyCreator : aop 全靠这个class
+	 * @param registry spring 容器
+	 * @param source element
+	 * @return
+	 */
 	@Nullable
 	private static BeanDefinition registerOrEscalateApcAsRequired(
 			Class<?> cls, BeanDefinitionRegistry registry, @Nullable Object source) {
 
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 
+		//判断 容器内 是否有  AUTO_PROXY_CREATOR_BEAN_NAME 的bd
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
+			//一般不走这，走这里 主要原因是自定义了注解解析器
 			BeanDefinition apcDefinition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
 			if (!cls.getName().equals(apcDefinition.getBeanClassName())) {
 				int currentPriority = findPriorityForClass(apcDefinition.getBeanClassName());
@@ -132,6 +149,9 @@ public abstract class AopConfigUtils {
 			return null;
 		}
 
+		//正常逻辑走这
+
+		//创建一个bd 并且设置 class  是AnnotationAwareAspectJAutoProxyCreator 最后将这个bd 注册到容器中
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
 		beanDefinition.setSource(source);
 		beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);

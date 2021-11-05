@@ -636,11 +636,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		if (earlySingletonExposure) {
 			Object earlySingletonReference = getSingleton(beanName, false);
+			//条件成立 说明 从二级缓存 拿到了
+			//说明产生 循环依赖了 3级缓存 当前对象的objectFactory.getObject() 被调用过
 			if (earlySingletonReference != null) {
+				//情况1、当前真实实例 不需要被代理
+				//情况2、当前实例 已经被代理过了 是在objectFactory.getObject()方法 调用的增强
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
 				}
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
+					//获取依赖当前bean 的其他beanName
 					String[] dependentBeans = getDependentBeans(beanName);
 					Set<String> actualDependentBeans = new LinkedHashSet<>(dependentBeans.length);
 					for (String dependentBean : dependentBeans) {
@@ -648,6 +653,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 							actualDependentBeans.add(dependentBean);
 						}
 					}
+					//这里有什么问题 因为当前 对象 aop 操作 是在 当前方法 的initializeBean 这个方法完成的
+					//在这 之前 外部其他bean持有的 当前bean实例 都是尚未增强的
 					if (!actualDependentBeans.isEmpty()) {
 						throw new BeanCurrentlyInCreationException(beanName,
 								"Bean with name '" + beanName + "' has been injected into other beans [" +
@@ -1888,6 +1895,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Object wrappedBean = bean;
 		if (mbd == null || !mbd.isSynthetic()) {
+			//后处理器的调用点 BeforInitialization 初始化之前的后处理器调用点
 			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
 		}
 
@@ -1900,6 +1908,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					beanName, "Invocation of init method failed", ex);
 		}
 		if (mbd == null || !mbd.isSynthetic()) {
+			//后处理器调用点：AfterInitialization 初始化之后的后处理器调用点
+			//典型应用 spring aop的实现
 			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
 		}
 
